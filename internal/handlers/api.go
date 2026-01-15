@@ -13,6 +13,13 @@ import (
 
 // API Handlers for React frontend
 
+// GetConfig returns public configuration
+func (h *Handler) GetConfig(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{
+		"bot_username": h.cfg.BotUsername,
+	})
+}
+
 // GetMe returns current authenticated user
 func (h *Handler) GetMe(c *fiber.Ctx) error {
 	user, ok := c.Locals("user").(*models.User)

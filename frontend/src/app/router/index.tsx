@@ -1,17 +1,18 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { useAuth, LoginModal } from '@/features/auth';
 import { NewCardModal } from '@/features/card';
 import { Header } from '@/widgets/header';
 import { HomePage } from '@/pages/home';
-
-const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'YourBotName';
+import { api } from '@/shared/api';
 
 export function AppRouter() {
   const { checkAuth } = useAuth();
+  const [botUsername, setBotUsername] = useState('');
 
   useEffect(() => {
     checkAuth();
+    api.getConfig().then((config) => setBotUsername(config.bot_username));
   }, [checkAuth]);
 
   return (
@@ -21,7 +22,7 @@ export function AppRouter() {
         <Route path="/" element={<HomePage />} />
         <Route path="/c/:id" element={<HomePage />} />
       </Routes>
-      <LoginModal botUsername={BOT_USERNAME} />
+      <LoginModal botUsername={botUsername} />
       <NewCardModal />
     </>
   );

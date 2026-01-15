@@ -7,8 +7,6 @@ COPY frontend/package*.json ./
 RUN npm ci
 
 COPY frontend/ ./
-ARG VITE_BOT_USERNAME=YourBotName
-ENV VITE_BOT_USERNAME=$VITE_BOT_USERNAME
 RUN npm run build
 
 # Build Go backend

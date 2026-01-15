@@ -20,6 +20,11 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  // Config
+  async getConfig(): Promise<{ bot_username: string }> {
+    return request('/config');
+  },
+
   // Auth
   async getMe(): Promise<User | null> {
     try {

@@ -49,6 +49,7 @@ func main() {
 
 	// JSON API routes
 	api := app.Group("/api")
+	api.Get("/config", h.GetConfig)
 	api.Get("/auth/me", h.GetMe)
 	api.Post("/auth/telegram", h.APITelegramAuth)
 	api.Post("/auth/logout", h.APILogout)
