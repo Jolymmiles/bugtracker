@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Modal, Stack, Text, Center, Box } from '@mantine/core';
+import { Modal, Stack, Text, Center, Box, Loader } from '@mantine/core';
 import { useAuth } from '../model/useAuth';
 
 declare global {
@@ -66,7 +66,8 @@ export function LoginModal({ botUsername }: LoginModalProps) {
         </Text>
 
         <Center py="md">
-          <Box ref={widgetRef} />
+          {!botUsername && <Loader size="sm" />}
+          <Box ref={widgetRef} style={{ display: botUsername ? 'block' : 'none' }} />
         </Center>
       </Stack>
     </Modal>
