@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Stack, Text, Center, Box, Loader } from '@mantine/core';
 import { useAuth } from '../model/useAuth';
 
@@ -22,7 +22,7 @@ interface LoginModalProps {
 
 export function LoginModal({ botUsername }: LoginModalProps) {
   const { isLoginModalOpen, closeLoginModal, login } = useAuth();
-  const widgetRef = useRef<HTMLDivElement>(null);
+  const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     window.onTelegramAuth = async (user) => {
@@ -38,8 +38,8 @@ export function LoginModal({ botUsername }: LoginModalProps) {
   }, [login]);
 
   useEffect(() => {
-    if (isLoginModalOpen && widgetRef.current && botUsername) {
-      widgetRef.current.innerHTML = '';
+    if (isLoginModalOpen && widgetContainer && botUsername) {
+      widgetContainer.innerHTML = '';
 
       const script = document.createElement('script');
       script.src = 'https://telegram.org/js/telegram-widget.js?22';
@@ -49,9 +49,9 @@ export function LoginModal({ botUsername }: LoginModalProps) {
       script.setAttribute('data-request-access', 'write');
       script.async = true;
 
-      widgetRef.current.appendChild(script);
+      widgetContainer.appendChild(script);
     }
-  }, [isLoginModalOpen, botUsername]);
+  }, [isLoginModalOpen, widgetContainer, botUsername]);
 
   return (
     <Modal
@@ -67,7 +67,7 @@ export function LoginModal({ botUsername }: LoginModalProps) {
 
         <Center py="md">
           {!botUsername && <Loader size="sm" />}
-          <Box ref={widgetRef} style={{ display: botUsername ? 'block' : 'none' }} />
+          <Box ref={setWidgetContainer} style={{ display: botUsername ? 'block' : 'none' }} />
         </Center>
       </Stack>
     </Modal>
