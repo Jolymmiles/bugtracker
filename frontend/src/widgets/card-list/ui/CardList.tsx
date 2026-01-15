@@ -59,12 +59,12 @@ export function CardList() {
       </Group>
 
       <Stack gap="sm">
-        {data?.cards.map((card) => (
+        {data?.cards?.map((card) => (
           <CardRow key={card.id} card={card} />
         ))}
       </Stack>
 
-      {data?.cards.length === 0 && (
+      {data?.cards?.length === 0 && (
         <Center py="xl">
           <Text c="dimmed">No cards found</Text>
         </Center>
