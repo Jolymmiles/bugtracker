@@ -1,0 +1,39 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bugtracker/bugtracker
+
+# Go
+*.test
+*.out
+go.work
+go.work.sum
+
+# Node/Frontend
+node_modules/
+frontend/node_modules/
+
+# Build output
+web/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
