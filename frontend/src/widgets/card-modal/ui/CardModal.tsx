@@ -41,8 +41,9 @@ function DescriptionViewer({ markdown }: { markdown: string }) {
   }, [markdown, editor]);
 
   return (
-    <Box style={{ pointerEvents: 'none' }}>
-      <BlockNoteView editor={editor} theme={colorScheme} editable={false} />
+    <Box style={{ pointerEvents: 'none' }} className="blocknote-readonly">
+      <style>{`.blocknote-readonly .bn-editor { padding-left: 0 !important; padding-inline-start: 0 !important; }`}</style>
+      <BlockNoteView editor={editor} theme={colorScheme} editable={false} sideMenu={false} />
     </Box>
   );
 }
@@ -121,7 +122,7 @@ export function CardModal() {
     <Modal
       opened={!!id}
       onClose={handleClose}
-      size="70%"
+      size="xl"
       padding="xl"
       title={modalTitle}
       withCloseButton
