@@ -1,39 +1,23 @@
 import { useState } from 'react';
 import { Container, TextInput, Group, SegmentedControl, Box, Button } from '@mantine/core';
 import { IconSearch, IconPlus } from '@tabler/icons-react';
-import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
-import { useNewCardModal } from '@/features/card';
+import { useNewCardModal, useCardFilters } from '@/features/card';
 import type { CardType } from '@/shared/types';
 
 export function SearchHeader() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [query, setQuery] = useState(searchParams.get('query') || '');
-  const type = (searchParams.get('type') || '') as CardType;
+  const { type, setType, setQuery } = useCardFilters();
+  const [inputQuery, setInputQuery] = useState('');
   const { user } = useAuth();
   const { open: openNewCardModal } = useNewCardModal();
 
   const handleTypeChange = (value: string) => {
-    const newParams = new URLSearchParams(searchParams);
-    if (value) {
-      newParams.set('type', value);
-    } else {
-      newParams.delete('type');
-    }
-    newParams.delete('page');
-    setSearchParams(newParams);
+    setType(value as CardType);
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const newParams = new URLSearchParams(searchParams);
-    if (query) {
-      newParams.set('query', query);
-    } else {
-      newParams.delete('query');
-    }
-    newParams.delete('page');
-    setSearchParams(newParams);
+    setQuery(inputQuery);
   };
 
   return (
@@ -51,8 +35,8 @@ export function SearchHeader() {
           <TextInput
             placeholder="Describe your issue or suggestion"
             leftSection={<IconSearch size={16} />}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            value={inputQuery}
+            onChange={(e) => setInputQuery(e.target.value)}
             mb="md"
           />
         </form>

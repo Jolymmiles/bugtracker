@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Modal, Stack, Text, Group, Badge, Box, Divider, Loader, Center, Image, Button, Select } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconTrash } from '@tabler/icons-react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
@@ -51,7 +51,6 @@ function DescriptionViewer({ markdown }: { markdown: string }) {
 export function CardModal() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const cardId = parseInt(id || '0', 10);
   const { data, isLoading, error } = useCard(cardId);
@@ -62,8 +61,7 @@ export function CardModal() {
   const isAdmin = user?.is_admin ?? false;
 
   const handleClose = () => {
-    const params = searchParams.toString();
-    navigate(params ? `/?${params}` : '/');
+    navigate('/');
   };
 
   const handleDelete = async () => {

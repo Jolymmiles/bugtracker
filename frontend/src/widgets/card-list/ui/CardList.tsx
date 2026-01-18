@@ -1,28 +1,19 @@
 import { Stack, Group, Text, Button, SegmentedControl, Center, Loader } from '@mantine/core';
-import { useSearchParams } from 'react-router-dom';
 import { useCards, CardRow } from '@/entities/card';
-import type { SortType, CardType } from '@/shared/types';
+import { useCardFilters } from '@/features/card';
+import type { SortType } from '@/shared/types';
 
 export function CardList() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const sort = (searchParams.get('sort') || 'rate') as SortType;
-  const type = (searchParams.get('type') || '') as CardType;
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const query = searchParams.get('query') || '';
+  const { sort, type, page, query, setSort, setPage } = useCardFilters();
 
   const { data, isLoading, error } = useCards({ sort, type, page, query });
 
   const handleSortChange = (value: string) => {
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set('sort', value);
-    newParams.delete('page');
-    setSearchParams(newParams);
+    setSort(value as SortType);
   };
 
   const handleLoadMore = () => {
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set('page', (page + 1).toString());
-    setSearchParams(newParams);
+    setPage(page + 1);
   };
 
   if (isLoading) {
