@@ -96,10 +96,10 @@ export const api = {
     return request(`/cards/${cardId}/comments`);
   },
 
-  async createComment(cardId: number, content: string): Promise<Comment> {
+  async createComment(cardId: number, content: string, images?: string[]): Promise<Comment> {
     return request(`/cards/${cardId}/comments`, {
       method: 'POST',
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, images }),
     });
   },
 

@@ -29,6 +29,7 @@ export interface Comment {
   card_id: number;
   user_id: number;
   content: string;
+  images?: string[];
   created_at: string;
   author?: User;
 }

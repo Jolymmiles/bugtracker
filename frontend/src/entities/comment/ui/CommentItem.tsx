@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Group, Avatar, Stack, Text, Box, ActionIcon } from '@mantine/core';
+import { Group, Avatar, Stack, Text, Box, ActionIcon, Image } from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
@@ -69,6 +69,23 @@ export function CommentItem({ comment, cardId, isAdmin = false }: CommentItemPro
           <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
             {comment.content}
           </Text>
+          {comment.images && comment.images.length > 0 && (
+            <Group gap="xs" mt="xs">
+              {comment.images.map((url, index) => (
+                <Image
+                  key={index}
+                  src={url}
+                  alt={`Image ${index + 1}`}
+                  w={60}
+                  h={60}
+                  radius="sm"
+                  fit="cover"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => window.open(url, '_blank')}
+                />
+              ))}
+            </Group>
+          )}
         </Stack>
       </Group>
     </Box>

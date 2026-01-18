@@ -276,16 +276,16 @@ func (r *Repository) GetUserVote(userID, cardID int64) (int, error) {
 // Comment operations
 func (r *Repository) CreateComment(c *models.Comment) error {
 	err := r.db.QueryRow(`
-		INSERT INTO comments (card_id, user_id, content, created_at)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO comments (card_id, user_id, content, images, created_at)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id
-	`, c.CardID, c.UserID, c.Content, time.Now()).Scan(&c.ID)
+	`, c.CardID, c.UserID, c.Content, pq.Array(c.Images), time.Now()).Scan(&c.ID)
 	return err
 }
 
 func (r *Repository) GetComments(cardID int64) ([]*models.Comment, error) {
 	rows, err := r.db.Query(`
-		SELECT c.id, c.card_id, c.user_id, c.content, c.created_at,
+		SELECT c.id, c.card_id, c.user_id, c.content, COALESCE(c.images, '{}'), c.created_at,
 		       u.id, u.first_name, COALESCE(u.last_name, ''), COALESCE(u.username, ''), COALESCE(u.photo_url, '')
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
@@ -301,7 +301,7 @@ func (r *Repository) GetComments(cardID int64) ([]*models.Comment, error) {
 	for rows.Next() {
 		c := &models.Comment{Author: &models.User{}}
 		err := rows.Scan(
-			&c.ID, &c.CardID, &c.UserID, &c.Content, &c.CreatedAt,
+			&c.ID, &c.CardID, &c.UserID, &c.Content, pq.Array(&c.Images), &c.CreatedAt,
 			&c.Author.ID, &c.Author.FirstName, &c.Author.LastName, &c.Author.Username, &c.Author.PhotoURL,
 		)
 		if err != nil {

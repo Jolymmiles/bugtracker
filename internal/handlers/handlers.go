@@ -11,19 +11,22 @@ import (
 	"bugtracker/internal/imgbb"
 	"bugtracker/internal/models"
 	"bugtracker/internal/repository"
+	"bugtracker/internal/telegram"
 )
 
 type Handler struct {
-	repo  *repository.Repository
-	cfg   *config.Config
-	imgbb *imgbb.Client
+	repo     *repository.Repository
+	cfg      *config.Config
+	imgbb    *imgbb.Client
+	telegram *telegram.Client
 }
 
 func New(repo *repository.Repository, cfg *config.Config) *Handler {
 	return &Handler{
-		repo:  repo,
-		cfg:   cfg,
-		imgbb: imgbb.New(cfg.ImgBBApiKey),
+		repo:     repo,
+		cfg:      cfg,
+		imgbb:    imgbb.New(cfg.ImgBBApiKey),
+		telegram: telegram.New(cfg.BotToken),
 	}
 }
 

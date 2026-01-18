@@ -16,6 +16,7 @@ type Config struct {
 	SessionKey  string
 	ImgBBApiKey string
 	AdminIDs    []int64
+	AppURL      string
 }
 
 func Load() *Config {
@@ -29,6 +30,7 @@ func Load() *Config {
 		SessionKey:  getEnv("SESSION_KEY", "change-me-in-production"),
 		ImgBBApiKey: getEnv("IMGBB_API_KEY", ""),
 		AdminIDs:    parseAdminIDs(getEnv("ADMIN_IDS", "")),
+		AppURL:      getEnv("APP_URL", ""),
 	}
 }
 

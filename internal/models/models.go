@@ -51,6 +51,7 @@ type Comment struct {
 	CardID    int64     `json:"card_id"`
 	UserID    int64     `json:"user_id"`
 	Content   string    `json:"content"`
+	Images    []string  `json:"images,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	Author    *User     `json:"author,omitempty"`
 }

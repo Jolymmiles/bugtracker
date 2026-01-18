@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -202,7 +204,8 @@ func (h *Handler) APICreateComment(c *fiber.Ctx) error {
 	cardID, _ := strconv.ParseInt(c.Params("id"), 10, 64)
 
 	var input struct {
-		Content string `json:"content"`
+		Content string   `json:"content"`
+		Images  []string `json:"images"`
 	}
 
 	if err := c.BodyParser(&input); err != nil {
@@ -218,6 +221,7 @@ func (h *Handler) APICreateComment(c *fiber.Ctx) error {
 		CardID:    cardID,
 		UserID:    user.ID,
 		Content:   content,
+		Images:    input.Images,
 		CreatedAt: time.Now(),
 		Author:    user,
 	}
@@ -226,7 +230,45 @@ func (h *Handler) APICreateComment(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Error creating comment"})
 	}
 
+	// Send notification to card author (if not commenting on own card)
+	go h.notifyNewComment(cardID, user, comment)
+
 	return c.Status(201).JSON(comment)
+}
+
+func (h *Handler) notifyNewComment(cardID int64, commenter *models.User, comment *models.Comment) {
+	card, err := h.repo.GetCard(cardID)
+	if err != nil || card == nil {
+		return
+	}
+
+	// Don't notify if user comments on their own card
+	if card.UserID == commenter.ID {
+		return
+	}
+
+	var link string
+	if h.cfg.AppURL != "" {
+		link = fmt.Sprintf("\n\n<a href=\"%s/c/%d\">Открыть карточку</a>", h.cfg.AppURL, card.ID)
+	}
+
+	commenterName := commenter.FirstName
+	if commenter.LastName != "" {
+		commenterName += " " + commenter.LastName
+	}
+
+	// Truncate long comments
+	content := comment.Content
+	if len(content) > 200 {
+		content = content[:200] + "..."
+	}
+
+	message := fmt.Sprintf("💬 <b>Новый комментарий к вашей карточке</b>\n\n\"%s\"\n\n<b>%s</b>: %s%s",
+		card.Title, commenterName, content, link)
+
+	if err := h.telegram.SendMessage(card.UserID, message); err != nil {
+		log.Printf("Failed to send comment notification to user %d: %v", card.UserID, err)
+	}
 }
 
 // APITelegramAuth handles Telegram auth for JSON API
@@ -375,5 +417,38 @@ func (h *Handler) APIUpdateCardStatus(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to get card"})
 	}
 
+	// Send notification to card author
+	go h.notifyStatusChange(card, input.Status)
+
 	return c.JSON(card)
+}
+
+func (h *Handler) notifyStatusChange(card *models.Card, newStatus string) {
+	if card == nil || card.UserID == 0 {
+		return
+	}
+
+	statusLabels := map[string]string{
+		"open":       "Open",
+		"closed":     "Closed",
+		"fixed":      "Fixed",
+		"fix_coming": "Fix Coming",
+	}
+
+	statusLabel := statusLabels[newStatus]
+	if statusLabel == "" {
+		statusLabel = newStatus
+	}
+
+	var link string
+	if h.cfg.AppURL != "" {
+		link = fmt.Sprintf("\n\n<a href=\"%s/c/%d\">Открыть карточку</a>", h.cfg.AppURL, card.ID)
+	}
+
+	message := fmt.Sprintf("📋 <b>Статус вашей карточки изменен</b>\n\n\"%s\"\n\nНовый статус: <b>%s</b>%s",
+		card.Title, statusLabel, link)
+
+	if err := h.telegram.SendMessage(card.UserID, message); err != nil {
+		log.Printf("Failed to send status notification to user %d: %v", card.UserID, err)
+	}
 }
