@@ -275,11 +275,15 @@ func (r *Repository) GetUserVote(userID, cardID int64) (int, error) {
 
 // Comment operations
 func (r *Repository) CreateComment(c *models.Comment) error {
+	images := c.Images
+	if images == nil {
+		images = []string{}
+	}
 	err := r.db.QueryRow(`
 		INSERT INTO comments (card_id, user_id, content, images, created_at)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id
-	`, c.CardID, c.UserID, c.Content, pq.Array(c.Images), time.Now()).Scan(&c.ID)
+	`, c.CardID, c.UserID, c.Content, pq.Array(images), time.Now()).Scan(&c.ID)
 	return err
 }
 

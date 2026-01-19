@@ -57,3 +57,9 @@ export interface TelegramAuthData {
 
 export type SortType = 'rate' | 'time';
 export type CardType = 'issue' | 'suggestion' | '';
+
+export interface Attachment {
+  url: string;
+  type: 'image' | 'video' | 'file';
+  filename: string;
+}

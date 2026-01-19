@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Modal, Stack, Text, Group, Badge, Box, Divider, Loader, Center, Image, Button, Select } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconTrash } from '@tabler/icons-react';
+import { IconTrash, IconPlayerPlay, IconFile } from '@tabler/icons-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCreateBlockNote } from '@blocknote/react';
@@ -13,6 +13,7 @@ import { CommentList } from '@/features/comment';
 import { useAuth } from '@/features/auth';
 import { formatDate, useColorScheme } from '@/shared/lib';
 import { api } from '@/shared/api';
+import { MediaModal, type MediaItem } from '@/shared/ui';
 
 const STATUS_COLORS: Record<string, string> = {
   open: 'cyan',
@@ -57,8 +58,37 @@ export function CardModal() {
   const { user } = useAuth();
   const [deleting, setDeleting] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+  const [mediaInitialIndex, setMediaInitialIndex] = useState(0);
 
   const isAdmin = user?.is_admin ?? false;
+
+  const isImageUrl = (url: string) => {
+    return url.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i);
+  };
+
+  const isVideoUrl = (url: string) => {
+    return url.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i);
+  };
+
+  const isMediaUrl = (url: string) => isImageUrl(url) || isVideoUrl(url);
+
+  const mediaItems: MediaItem[] = useMemo(() => {
+    if (!data?.card?.images) return [];
+    return data.card.images.filter(isMediaUrl).map((url) => ({ url }));
+  }, [data?.card?.images]);
+
+  const handleFileClick = (url: string) => {
+    if (isMediaUrl(url)) {
+      const mediaIndex = mediaItems.findIndex((item) => item.url === url);
+      if (mediaIndex !== -1) {
+        setMediaInitialIndex(mediaIndex);
+        setMediaModalOpen(true);
+      }
+    } else {
+      window.open(url, '_blank');
+    }
+  };
 
   const handleClose = () => {
     navigate('/');
@@ -153,17 +183,53 @@ export function CardModal() {
           {data.card.images && data.card.images.length > 0 && (
             <Group gap="xs">
               {data.card.images.map((url, index) => (
-                <Image
+                <Box
                   key={index}
-                  src={url}
-                  alt={`Image ${index + 1}`}
                   w={80}
                   h={80}
-                  radius="sm"
-                  fit="cover"
+                  pos="relative"
                   style={{ cursor: 'pointer' }}
-                  onClick={() => window.open(url, '_blank')}
-                />
+                  onClick={() => handleFileClick(url)}
+                >
+                  {isImageUrl(url) ? (
+                    <Image
+                      src={url}
+                      alt={`Image ${index + 1}`}
+                      w={80}
+                      h={80}
+                      radius="sm"
+                      fit="cover"
+                    />
+                  ) : isVideoUrl(url) ? (
+                    <Box
+                      w={80}
+                      h={80}
+                      style={{
+                        borderRadius: 'var(--mantine-radius-sm)',
+                        background: 'var(--mantine-color-dark-6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <IconPlayerPlay size={32} color="white" />
+                    </Box>
+                  ) : (
+                    <Box
+                      w={80}
+                      h={80}
+                      style={{
+                        borderRadius: 'var(--mantine-radius-sm)',
+                        background: 'var(--mantine-color-dark-6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <IconFile size={32} color="white" />
+                    </Box>
+                  )}
+                </Box>
               ))}
             </Group>
           )}
@@ -198,6 +264,13 @@ export function CardModal() {
           <CommentList cardId={data.card.id} comments={data.comments || []} isAdmin={isAdmin} />
         </Stack>
       )}
+
+      <MediaModal
+        items={mediaItems}
+        initialIndex={mediaInitialIndex}
+        opened={mediaModalOpen}
+        onClose={() => setMediaModalOpen(false)}
+      />
     </Modal>
   );
 }

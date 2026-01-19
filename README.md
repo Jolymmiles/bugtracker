@@ -24,7 +24,16 @@ cp .env.example .env
 - `BOT_TOKEN` - bot token from @BotFather
 - `BOT_USERNAME` - bot username
 - `SESSION_KEY` - session secret key
-- `IMGBB_API_KEY` - ImgBB API key (optional)
+- `IMGBB_API_KEY` - ImgBB API key (optional, legacy)
+
+### S3 Storage (optional)
+For file uploads (images, videos, files up to 100MB):
+- `S3_BUCKET` - S3 bucket name
+- `S3_REGION` - AWS region (default: us-east-1)
+- `S3_ENDPOINT` - custom endpoint for MinIO/Cloudflare R2 (optional)
+- `S3_ACCESS_KEY_ID` - AWS access key
+- `S3_SECRET_ACCESS_KEY` - AWS secret key
+- `S3_PUBLIC_URL` - public URL for accessing files (e.g., https://bucket.s3.amazonaws.com)
 
 3. Run:
 ```bash

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Stack, Text, Group, Textarea, Button, Box, FileButton, ActionIcon, Image } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconPlus, IconX } from '@tabler/icons-react';
+import { IconPlus, IconX, IconPlayerPlay, IconFile } from '@tabler/icons-react';
 import { useAuth } from '@/features/auth';
 import { useCreateComment } from '../model/useComments';
 import { CommentItem } from '@/entities/comment';
 import { api } from '@/shared/api';
-import type { Comment } from '@/shared/types';
+import type { Comment, Attachment } from '@/shared/types';
 
 interface CommentListProps {
   cardId: number;
@@ -17,40 +17,38 @@ interface CommentListProps {
 export function CommentList({ cardId, comments, isAdmin = false }: CommentListProps) {
   const { user, openLoginModal } = useAuth();
   const [content, setContent] = useState('');
-  const [images, setImages] = useState<string[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const createComment = useCreateComment(cardId);
 
-  const handleFileSelect = async (file: File | null) => {
-    if (!file) return;
+  const handleFilesSelect = async (files: File[]) => {
+    if (!files || files.length === 0) return;
 
-    if (!file.type.startsWith('image/')) {
-      notifications.show({
-        title: 'Error',
-        message: 'Please select an image file',
-        color: 'red',
-      });
-      return;
-    }
+    const validFiles = files.filter((file) => {
+      if (file.size > 100 * 1024 * 1024) {
+        notifications.show({
+          title: 'Error',
+          message: `${file.name} is too large (max 100MB)`,
+          color: 'red',
+        });
+        return false;
+      }
+      return true;
+    });
 
-    if (file.size > 32 * 1024 * 1024) {
-      notifications.show({
-        title: 'Error',
-        message: 'Image is too large (max 32MB)',
-        color: 'red',
-      });
-      return;
-    }
+    if (validFiles.length === 0) return;
 
     setUploading(true);
 
     try {
-      const result = await api.uploadImage(file);
-      setImages((prev) => [...prev, result.url]);
+      for (const file of validFiles) {
+        const result = await api.uploadFile(file);
+        setAttachments((prev) => [...prev, result]);
+      }
     } catch (error) {
       notifications.show({
         title: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to upload image',
+        message: error instanceof Error ? error.message : 'Failed to upload file',
         color: 'red',
       });
     } finally {
@@ -58,20 +56,20 @@ export function CommentList({ cardId, comments, isAdmin = false }: CommentListPr
     }
   };
 
-  const handleRemoveImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim() && attachments.length === 0) return;
 
     createComment.mutate(
-      { content: content.trim(), images: images.length > 0 ? images : undefined },
+      { content: content.trim(), images: attachments.length > 0 ? attachments.map((a) => a.url) : undefined },
       {
         onSuccess: () => {
           setContent('');
-          setImages([]);
+          setAttachments([]);
         },
       }
     );
@@ -100,18 +98,48 @@ export function CommentList({ cardId, comments, isAdmin = false }: CommentListPr
       {user ? (
         <form onSubmit={handleSubmit}>
           <Stack gap="xs">
-            {images.length > 0 && (
+            {attachments.length > 0 && (
               <Group gap="xs">
-                {images.map((url, index) => (
+                {attachments.map((attachment, index) => (
                   <Box key={index} pos="relative" w={50} h={50}>
-                    <Image
-                      src={url}
-                      alt={`Image ${index + 1}`}
-                      w={50}
-                      h={50}
-                      radius="sm"
-                      fit="cover"
-                    />
+                    {attachment.type === 'image' ? (
+                      <Image
+                        src={attachment.url}
+                        alt={attachment.filename}
+                        w={50}
+                        h={50}
+                        radius="sm"
+                        fit="cover"
+                      />
+                    ) : attachment.type === 'video' ? (
+                      <Box
+                        w={50}
+                        h={50}
+                        style={{
+                          borderRadius: 'var(--mantine-radius-sm)',
+                          background: 'var(--mantine-color-dark-6)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <IconPlayerPlay size={20} color="white" />
+                      </Box>
+                    ) : (
+                      <Box
+                        w={50}
+                        h={50}
+                        style={{
+                          borderRadius: 'var(--mantine-radius-sm)',
+                          background: 'var(--mantine-color-dark-6)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <IconFile size={20} color="white" />
+                      </Box>
+                    )}
                     <ActionIcon
                       variant="filled"
                       color="red"
@@ -119,7 +147,7 @@ export function CommentList({ cardId, comments, isAdmin = false }: CommentListPr
                       pos="absolute"
                       top={-6}
                       right={-6}
-                      onClick={() => handleRemoveImage(index)}
+                      onClick={() => handleRemoveAttachment(index)}
                     >
                       <IconX size={10} />
                     </ActionIcon>
@@ -137,7 +165,7 @@ export function CommentList({ cardId, comments, isAdmin = false }: CommentListPr
                 minRows={1}
                 maxRows={4}
               />
-              <FileButton onChange={handleFileSelect} accept="image/*">
+              <FileButton onChange={handleFilesSelect} multiple>
                 {(props) => (
                   <ActionIcon {...props} variant="light" size="lg" loading={uploading}>
                     {uploading ? null : <IconPlus size={18} />}

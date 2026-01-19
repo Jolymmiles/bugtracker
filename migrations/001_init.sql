@@ -65,16 +65,3 @@ CREATE INDEX IF NOT EXISTS idx_cards_user ON cards(user_id);
 CREATE INDEX IF NOT EXISTS idx_comments_card ON comments(card_id);
 CREATE INDEX IF NOT EXISTS idx_comments_created ON comments(created_at);
 CREATE INDEX IF NOT EXISTS idx_votes_card ON votes(card_id);
-
--- Default tags
-INSERT INTO tags (name) VALUES 
-    ('General'),
-    ('Android'),
-    ('iOS'),
-    ('Desktop'),
-    ('Web'),
-    ('API'),
-    ('UI/UX'),
-    ('Performance'),
-    ('Security')
-ON CONFLICT (name) DO NOTHING;

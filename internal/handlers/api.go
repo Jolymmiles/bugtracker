@@ -11,6 +11,7 @@ import (
 
 	"bugtracker/internal/auth"
 	"bugtracker/internal/models"
+	s3client "bugtracker/internal/s3"
 )
 
 // API Handlers for React frontend
@@ -213,7 +214,7 @@ func (h *Handler) APICreateComment(c *fiber.Ctx) error {
 	}
 
 	content := strings.TrimSpace(input.Content)
-	if content == "" {
+	if content == "" && len(input.Images) == 0 {
 		return c.Status(400).JSON(fiber.Map{"error": "Comment cannot be empty"})
 	}
 
@@ -227,6 +228,7 @@ func (h *Handler) APICreateComment(c *fiber.Ctx) error {
 	}
 
 	if err := h.repo.CreateComment(comment); err != nil {
+		log.Printf("Error creating comment: %v", err)
 		return c.Status(500).JSON(fiber.Map{"error": "Error creating comment"})
 	}
 
@@ -308,7 +310,46 @@ func (h *Handler) APITelegramAuth(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"ok": true})
 }
 
-// APIUploadImage handles image upload to ImgBB
+// APIUploadFile handles file upload to S3
+func (h *Handler) APIUploadFile(c *fiber.Ctx) error {
+	user, ok := c.Locals("user").(*models.User)
+	if !ok || user == nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Login required"})
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "No file provided"})
+	}
+
+	if file.Size > 100*1024*1024 {
+		return c.Status(400).JSON(fiber.Map{"error": "File too large (max 100MB)"})
+	}
+
+	if h.s3 == nil {
+		return c.Status(500).JSON(fiber.Map{"error": "File storage not configured"})
+	}
+
+	f, err := file.Open()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to read file"})
+	}
+	defer f.Close()
+
+	contentType := file.Header.Get("Content-Type")
+	if contentType == "" || contentType == "application/octet-stream" {
+		contentType = s3client.DetectContentType(file.Filename)
+	}
+
+	result, err := h.s3.Upload(c.Context(), f, file.Filename, contentType, file.Size)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to upload file: " + err.Error()})
+	}
+
+	return c.JSON(result)
+}
+
+// APIUploadImage handles image upload to ImgBB (legacy, kept for backward compatibility)
 func (h *Handler) APIUploadImage(c *fiber.Ctx) error {
 	user, ok := c.Locals("user").(*models.User)
 	if !ok || user == nil {

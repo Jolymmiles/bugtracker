@@ -65,3 +65,9 @@ type TelegramAuthData struct {
 	AuthDate  int64  `json:"auth_date"`
 	Hash      string `json:"hash"`
 }
+
+type Attachment struct {
+	URL      string `json:"url"`
+	Type     string `json:"type"`
+	Filename string `json:"filename"`
+}

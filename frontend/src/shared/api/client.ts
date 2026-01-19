@@ -1,4 +1,4 @@
-import type { Card, CardsResponse, CardDetailResponse, Comment, User, TelegramAuthData, SortType, CardType } from '@/shared/types';
+import type { Card, CardsResponse, CardDetailResponse, Comment, User, TelegramAuthData, SortType, CardType, Attachment } from '@/shared/types';
 
 const API_BASE = '/api';
 
@@ -104,11 +104,30 @@ export const api = {
   },
 
   // Upload
+  async uploadFile(file: File): Promise<Attachment> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE}/upload`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Upload failed');
+    }
+
+    return response.json();
+  },
+
+  // Legacy upload for backward compatibility
   async uploadImage(file: File): Promise<{ url: string }> {
     const formData = new FormData();
     formData.append('image', file);
 
-    const response = await fetch(`${API_BASE}/upload`, {
+    const response = await fetch(`${API_BASE}/upload/image`, {
       method: 'POST',
       body: formData,
       credentials: 'include',

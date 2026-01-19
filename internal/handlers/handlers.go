@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"strconv"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"bugtracker/internal/imgbb"
 	"bugtracker/internal/models"
 	"bugtracker/internal/repository"
+	"bugtracker/internal/s3"
 	"bugtracker/internal/telegram"
 )
 
@@ -19,15 +21,35 @@ type Handler struct {
 	cfg      *config.Config
 	imgbb    *imgbb.Client
 	telegram *telegram.Client
+	s3       *s3.Client
 }
 
 func New(repo *repository.Repository, cfg *config.Config) *Handler {
-	return &Handler{
+	h := &Handler{
 		repo:     repo,
 		cfg:      cfg,
 		imgbb:    imgbb.New(cfg.ImgBBApiKey),
 		telegram: telegram.New(cfg.BotToken),
 	}
+
+	if cfg.S3Bucket != "" {
+		s3Client, err := s3.New(
+			cfg.S3Bucket,
+			cfg.S3Region,
+			cfg.S3Endpoint,
+			cfg.S3AccessKeyID,
+			cfg.S3SecretAccessKey,
+			cfg.S3PublicURL,
+		)
+		if err != nil {
+			log.Printf("Warning: Failed to initialize S3 client: %v", err)
+		} else {
+			h.s3 = s3Client
+			log.Println("S3 client initialized successfully")
+		}
+	}
+
+	return h
 }
 
 // Auth middleware

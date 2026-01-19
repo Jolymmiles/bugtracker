@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Group, Avatar, Stack, Text, Box, ActionIcon, Image } from '@mantine/core';
-import { IconTrash } from '@tabler/icons-react';
+import { IconTrash, IconPlayerPlay, IconFile } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Comment } from '@/shared/types';
 import { timeAgo } from '@/shared/lib';
 import { api } from '@/shared/api';
+import { MediaModal, type MediaItem } from '@/shared/ui';
 
 interface CommentItemProps {
   comment: Comment;
@@ -17,6 +18,35 @@ export function CommentItem({ comment, cardId, isAdmin = false }: CommentItemPro
   const author = comment.author;
   const queryClient = useQueryClient();
   const [deleting, setDeleting] = useState(false);
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+  const [mediaInitialIndex, setMediaInitialIndex] = useState(0);
+
+  const isImageUrl = (url: string) => {
+    return url.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i);
+  };
+
+  const isVideoUrl = (url: string) => {
+    return url.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i);
+  };
+
+  const isMediaUrl = (url: string) => isImageUrl(url) || isVideoUrl(url);
+
+  const mediaItems: MediaItem[] = useMemo(() => {
+    if (!comment.images) return [];
+    return comment.images.filter(isMediaUrl).map((url) => ({ url }));
+  }, [comment.images]);
+
+  const handleFileClick = (url: string) => {
+    if (isMediaUrl(url)) {
+      const mediaIndex = mediaItems.findIndex((item) => item.url === url);
+      if (mediaIndex !== -1) {
+        setMediaInitialIndex(mediaIndex);
+        setMediaModalOpen(true);
+      }
+    } else {
+      window.open(url, '_blank');
+    }
+  };
 
   const handleDelete = async () => {
     if (!confirm('Delete this comment?')) return;
@@ -72,22 +102,65 @@ export function CommentItem({ comment, cardId, isAdmin = false }: CommentItemPro
           {comment.images && comment.images.length > 0 && (
             <Group gap="xs" mt="xs">
               {comment.images.map((url, index) => (
-                <Image
+                <Box
                   key={index}
-                  src={url}
-                  alt={`Image ${index + 1}`}
                   w={60}
                   h={60}
-                  radius="sm"
-                  fit="cover"
+                  pos="relative"
                   style={{ cursor: 'pointer' }}
-                  onClick={() => window.open(url, '_blank')}
-                />
+                  onClick={() => handleFileClick(url)}
+                >
+                  {isImageUrl(url) ? (
+                    <Image
+                      src={url}
+                      alt={`Image ${index + 1}`}
+                      w={60}
+                      h={60}
+                      radius="sm"
+                      fit="cover"
+                    />
+                  ) : isVideoUrl(url) ? (
+                    <Box
+                      w={60}
+                      h={60}
+                      style={{
+                        borderRadius: 'var(--mantine-radius-sm)',
+                        background: 'var(--mantine-color-dark-6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <IconPlayerPlay size={24} color="white" />
+                    </Box>
+                  ) : (
+                    <Box
+                      w={60}
+                      h={60}
+                      style={{
+                        borderRadius: 'var(--mantine-radius-sm)',
+                        background: 'var(--mantine-color-dark-6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <IconFile size={24} color="white" />
+                    </Box>
+                  )}
+                </Box>
               ))}
             </Group>
           )}
         </Stack>
       </Group>
+
+      <MediaModal
+        items={mediaItems}
+        initialIndex={mediaInitialIndex}
+        opened={mediaModalOpen}
+        onClose={() => setMediaModalOpen(false)}
+      />
     </Box>
   );
 }

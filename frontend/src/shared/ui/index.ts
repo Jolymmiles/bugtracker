@@ -1,5 +1,8 @@
 import { createTheme, MantineColorsTuple } from '@mantine/core';
 
+export { MediaModal } from './MediaModal';
+export type { MediaItem } from './MediaModal';
+
 const brand: MantineColorsTuple = [
   '#e5f4ff',
   '#cde4ff',

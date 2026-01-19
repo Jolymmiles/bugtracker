@@ -13,6 +13,7 @@ import (
 
 	"bugtracker/internal/config"
 	"bugtracker/internal/handlers"
+	"bugtracker/internal/migrate"
 	"bugtracker/internal/repository"
 )
 
@@ -27,6 +28,10 @@ func main() {
 
 	if err := db.Ping(); err != nil {
 		log.Fatal("Failed to connect to database:", err)
+	}
+
+	if err := migrate.Run(db, "./migrations"); err != nil {
+		log.Fatal("Failed to run migrations:", err)
 	}
 
 	repo := repository.New(db)
@@ -62,7 +67,8 @@ func main() {
 	api.Get("/cards/:id/comments", h.GetComments)
 	api.Post("/cards/:id/comments", h.APICreateComment)
 	api.Delete("/comments/:id", h.APIDeleteComment)
-	api.Post("/upload", h.APIUploadImage)
+	api.Post("/upload", h.APIUploadFile)
+	api.Post("/upload/image", h.APIUploadImage) // Legacy endpoint for ImgBB
 
 	// Serve React SPA from web/dist
 	distPath := "./web/dist"

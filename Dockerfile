@@ -31,6 +31,7 @@ RUN apk add --no-cache ca-certificates tzdata
 
 COPY --from=backend-builder /app/bugtracker .
 COPY --from=frontend-builder /app/frontend/../web/dist ./web/dist
+COPY migrations ./migrations
 
 EXPOSE 3000
 

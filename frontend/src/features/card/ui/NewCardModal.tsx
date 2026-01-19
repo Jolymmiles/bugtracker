@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal, Stack, Title, TextInput, Select, Button, FileButton, Group, Image, ActionIcon, Text, Box } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconX, IconPlus } from '@tabler/icons-react';
+import { IconX, IconPlus, IconPlayerPlay, IconFile } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
@@ -11,6 +11,7 @@ import { useCreateCard } from '@/entities/card';
 import { api } from '@/shared/api';
 import { useNewCardModal } from '../model/useNewCardModal';
 import { useColorScheme } from '@/shared/lib';
+import type { Attachment } from '@/shared/types';
 
 const { checkListItem, image, video, audio, file, ...filteredBlockSpecs } = defaultBlockSpecs;
 const schema = BlockNoteSchema.create({
@@ -25,7 +26,7 @@ export function NewCardModal() {
 
   const [title, setTitle] = useState('');
   const [type, setType] = useState<string | null>('issue');
-  const [images, setImages] = useState<string[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
 
   const editor = useCreateBlockNote({ schema });
@@ -33,7 +34,7 @@ export function NewCardModal() {
   const resetForm = () => {
     setTitle('');
     setType('issue');
-    setImages([]);
+    setAttachments([]);
     editor.replaceBlocks(editor.document, []);
   };
 
@@ -42,41 +43,39 @@ export function NewCardModal() {
     close();
   };
 
-  const handleFileSelect = async (file: File | null) => {
-    if (!file) return;
+  const handleFilesSelect = async (files: File[]) => {
+    if (!files || files.length === 0) return;
 
-    if (!file.type.startsWith('image/')) {
-      notifications.show({
-        title: 'Error',
-        message: 'Please select an image file',
-        color: 'red',
-      });
-      return;
-    }
+    const validFiles = files.filter((file) => {
+      if (file.size > 100 * 1024 * 1024) {
+        notifications.show({
+          title: 'Error',
+          message: `${file.name} is too large (max 100MB)`,
+          color: 'red',
+        });
+        return false;
+      }
+      return true;
+    });
 
-    if (file.size > 32 * 1024 * 1024) {
-      notifications.show({
-        title: 'Error',
-        message: 'Image is too large (max 32MB)',
-        color: 'red',
-      });
-      return;
-    }
+    if (validFiles.length === 0) return;
 
     setUploading(true);
 
     try {
-      const result = await api.uploadImage(file);
-      setImages((prev) => [...prev, result.url]);
+      for (const file of validFiles) {
+        const result = await api.uploadFile(file);
+        setAttachments((prev) => [...prev, result]);
+      }
       notifications.show({
         title: 'Success',
-        message: 'Image uploaded successfully',
+        message: `${validFiles.length} file(s) uploaded successfully`,
         color: 'green',
       });
     } catch (error) {
       notifications.show({
         title: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to upload image',
+        message: error instanceof Error ? error.message : 'Failed to upload file',
         color: 'red',
       });
     } finally {
@@ -84,8 +83,8 @@ export function NewCardModal() {
     }
   };
 
-  const handleRemoveImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
   const getDescription = async () => {
@@ -112,7 +111,7 @@ export function NewCardModal() {
         title: title.trim(),
         description: description.trim(),
         type: type || 'issue',
-        images: images.length > 0 ? images : undefined,
+        images: attachments.length > 0 ? attachments.map((a) => a.url) : undefined,
       },
       {
         onSuccess: (card) => {
@@ -180,19 +179,49 @@ export function NewCardModal() {
           </Stack>
 
           <Stack gap="xs">
-            <Text size="sm" fw={500}>Images (optional)</Text>
+            <Text size="sm" fw={500}>Attachments (optional, max 100MB per file)</Text>
             
             <Group gap="xs">
-              {images.map((url, index) => (
+              {attachments.map((attachment, index) => (
                 <Box key={index} pos="relative" w={60} h={60}>
-                  <Image
-                    src={url}
-                    alt={`Image ${index + 1}`}
-                    w={60}
-                    h={60}
-                    radius="sm"
-                    fit="cover"
-                  />
+                  {attachment.type === 'image' ? (
+                    <Image
+                      src={attachment.url}
+                      alt={attachment.filename}
+                      w={60}
+                      h={60}
+                      radius="sm"
+                      fit="cover"
+                    />
+                  ) : attachment.type === 'video' ? (
+                    <Box
+                      w={60}
+                      h={60}
+                      style={{
+                        borderRadius: 'var(--mantine-radius-sm)',
+                        background: 'var(--mantine-color-dark-6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <IconPlayerPlay size={24} color="white" />
+                    </Box>
+                  ) : (
+                    <Box
+                      w={60}
+                      h={60}
+                      style={{
+                        borderRadius: 'var(--mantine-radius-sm)',
+                        background: 'var(--mantine-color-dark-6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <IconFile size={24} color="white" />
+                    </Box>
+                  )}
                   <ActionIcon
                     variant="filled"
                     color="red"
@@ -200,17 +229,14 @@ export function NewCardModal() {
                     pos="absolute"
                     top={-6}
                     right={-6}
-                    onClick={() => handleRemoveImage(index)}
+                    onClick={() => handleRemoveAttachment(index)}
                   >
                     <IconX size={12} />
                   </ActionIcon>
                 </Box>
               ))}
               
-              <FileButton
-                onChange={handleFileSelect}
-                accept="image/*"
-              >
+              <FileButton onChange={handleFilesSelect} multiple>
                 {(props) => (
                   <ActionIcon
                     {...props}
