@@ -57,6 +57,7 @@ export interface TelegramAuthData {
 
 export type SortType = 'rate' | 'time';
 export type CardType = 'issue' | 'suggestion' | '';
+export type StatusType = 'open' | 'fix_coming' | 'fixed' | 'closed';
 
 export interface Attachment {
   url: string;

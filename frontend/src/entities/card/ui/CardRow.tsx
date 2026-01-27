@@ -99,9 +99,13 @@ export function CardRow({ card }: CardRowProps) {
               <Text size="xs" c="dimmed">
                 {timeAgo(card.created_at)}
               </Text>
-              <Text size="xs" c="dimmed">
+              <Badge
+                color={card.type === 'issue' ? 'red' : 'blue'}
+                variant="light"
+                size="xs"
+              >
                 {card.type === 'issue' ? 'Issue' : 'Suggestion'}
-              </Text>
+              </Badge>
             </Group>
             <Group gap="sm">
               {card.comment_count > 0 && (

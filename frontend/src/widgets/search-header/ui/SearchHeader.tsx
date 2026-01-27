@@ -1,18 +1,22 @@
 import { useState } from 'react';
-import { Container, TextInput, Group, SegmentedControl, Box, Button } from '@mantine/core';
+import { Container, TextInput, Group, SegmentedControl, Box, Button, Stack } from '@mantine/core';
 import { IconSearch, IconPlus } from '@tabler/icons-react';
 import { useAuth } from '@/features/auth';
 import { useNewCardModal, useCardFilters } from '@/features/card';
-import type { CardType } from '@/shared/types';
+import type { CardType, StatusType } from '@/shared/types';
 
 export function SearchHeader() {
-  const { type, setType, setQuery } = useCardFilters();
+  const { type, status, setType, setStatus, setQuery } = useCardFilters();
   const [inputQuery, setInputQuery] = useState('');
   const { user } = useAuth();
   const { open: openNewCardModal } = useNewCardModal();
 
   const handleTypeChange = (value: string) => {
     setType(value as CardType);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatus(value as StatusType);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -41,26 +45,40 @@ export function SearchHeader() {
           />
         </form>
 
-        <Group justify="space-between">
+        <Stack gap="sm">
+          <Group justify="space-between">
+            <SegmentedControl
+              value={type}
+              onChange={handleTypeChange}
+              data={[
+                { label: 'All', value: '' },
+                { label: 'Issues', value: 'issue' },
+                { label: 'Suggestions', value: 'suggestion' },
+              ]}
+            />
+
+            {user && (
+              <Button
+                leftSection={<IconPlus size={16} />}
+                onClick={openNewCardModal}
+              >
+                New Card
+              </Button>
+            )}
+          </Group>
+
           <SegmentedControl
-            value={type}
-            onChange={handleTypeChange}
+            size="xs"
+            value={status}
+            onChange={handleStatusChange}
             data={[
-              { label: 'All', value: '' },
-              { label: 'Issues', value: 'issue' },
-              { label: 'Suggestions', value: 'suggestion' },
+              { label: 'Open', value: 'open' },
+              { label: 'Fix Coming', value: 'fix_coming' },
+              { label: 'Fixed', value: 'fixed' },
+              { label: 'Closed', value: 'closed' },
             ]}
           />
-
-          {user && (
-            <Button
-              leftSection={<IconPlus size={16} />}
-              onClick={openNewCardModal}
-            >
-              New Card
-            </Button>
-          )}
-        </Group>
+        </Stack>
       </Container>
     </Box>
   );

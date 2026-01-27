@@ -1,19 +1,44 @@
-import { Stack, Group, Text, Button, SegmentedControl, Center, Loader } from '@mantine/core';
+import { useEffect, useRef, useMemo } from 'react';
+import { Stack, Group, Text, SegmentedControl, Center, Loader } from '@mantine/core';
 import { useCards, CardRow } from '@/entities/card';
 import { useCardFilters } from '@/features/card';
 import type { SortType } from '@/shared/types';
 
 export function CardList() {
-  const { sort, type, page, query, setSort, setPage } = useCardFilters();
+  const { sort, type, status, query, setSort } = useCardFilters();
+  const observerRef = useRef<HTMLDivElement>(null);
 
-  const { data, isLoading, error } = useCards({ sort, type, page, query });
+  const {
+    data,
+    isLoading,
+    error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useCards({ sort, type, status, query });
+
+  const cards = useMemo(
+    () => data?.pages.flatMap((page) => page.cards ?? []) ?? [],
+    [data]
+  );
+
+  const total = data?.pages[0]?.total ?? 0;
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (observerRef.current) observer.observe(observerRef.current);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleSortChange = (value: string) => {
     setSort(value as SortType);
-  };
-
-  const handleLoadMore = () => {
-    setPage(page + 1);
   };
 
   if (isLoading) {
@@ -36,7 +61,7 @@ export function CardList() {
     <Stack gap="md">
       <Group justify="space-between">
         <Text size="sm" c="dimmed">
-          {data?.total || 0} Cards
+          {total} Cards
         </Text>
         <SegmentedControl
           size="xs"
@@ -50,22 +75,22 @@ export function CardList() {
       </Group>
 
       <Stack gap="sm">
-        {data?.cards?.map((card) => (
+        {cards.map((card) => (
           <CardRow key={card.id} card={card} />
         ))}
       </Stack>
 
-      {data?.cards?.length === 0 && (
+      {cards.length === 0 && (
         <Center py="xl">
           <Text c="dimmed">No cards found</Text>
         </Center>
       )}
 
-      {data?.has_more && (
+      <div ref={observerRef} style={{ height: 1 }} />
+
+      {isFetchingNextPage && (
         <Center py="md">
-          <Button variant="light" onClick={handleLoadMore}>
-            Load More
-          </Button>
+          <Loader size="sm" />
         </Center>
       )}
     </Stack>
