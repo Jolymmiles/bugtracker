@@ -52,6 +52,10 @@ func main() {
 	}))
 	app.Use(h.AuthMiddleware)
 
+	// External Auth routes (before API group)
+	app.Get("/auth/telegram", h.ExternalAuthRedirect)
+	app.Get("/auth/callback", h.ExternalAuthCallback)
+
 	// JSON API routes
 	api := app.Group("/api")
 	api.Get("/config", h.GetConfig)

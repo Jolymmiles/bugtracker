@@ -1,7 +1,11 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"log"
+	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -112,6 +116,87 @@ func (h *Handler) Logout(c *fiber.Ctx) error {
 	return c.Redirect("/")
 }
 
+// ExternalAuthRedirect redirects to external auth service
+func (h *Handler) ExternalAuthRedirect(c *fiber.Ctx) error {
+	if h.cfg.ExternalAuthURL == "" {
+		return c.Status(501).JSON(fiber.Map{"error": "External auth not configured"})
+	}
+
+	returnURL := h.cfg.AppURL + "/auth/callback"
+	authURL := h.cfg.ExternalAuthURL + "/api/v1/auth/external?client_id=" +
+		url.QueryEscape(h.cfg.ExternalAuthClientID) +
+		"&return_url=" + url.QueryEscape(returnURL)
+
+	return c.Redirect(authURL)
+}
+
+// ExternalAuthCallback handles callback from external auth service
+func (h *Handler) ExternalAuthCallback(c *fiber.Ctx) error {
+	code := c.Query("code")
+	if code == "" {
+		errorMsg := c.Query("error")
+		log.Printf("[ExternalAuth] Error: %s", errorMsg)
+		return c.Redirect("/?error=" + errorMsg)
+	}
+
+	// Exchange code for user data
+	exchangeURL := h.cfg.ExternalAuthURL + "/api/v1/auth/exchange"
+	reqBody, _ := json.Marshal(map[string]string{
+		"code":          code,
+		"client_secret": h.cfg.ExternalAuthClientSecret,
+	})
+
+	resp, err := http.Post(exchangeURL, "application/json", bytes.NewBuffer(reqBody))
+	if err != nil {
+		log.Printf("[ExternalAuth] Exchange request failed: %v", err)
+		return c.Redirect("/?error=exchange_failed")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		log.Printf("[ExternalAuth] Exchange failed with status: %d", resp.StatusCode)
+		return c.Redirect("/?error=exchange_failed")
+	}
+
+	var userData struct {
+		TelegramID int64  `json:"telegram_id"`
+		Username   string `json:"username"`
+		FirstName  string `json:"first_name"`
+		LastName   string `json:"last_name"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&userData); err != nil {
+		log.Printf("[ExternalAuth] Failed to decode response: %v", err)
+		return c.Redirect("/?error=decode_failed")
+	}
+
+	// Create/update user
+	user := &models.User{
+		ID:        userData.TelegramID,
+		FirstName: userData.FirstName,
+		LastName:  userData.LastName,
+		Username:  userData.Username,
+		AuthDate:  time.Now(),
+	}
+
+	if err := h.repo.UpsertUser(user); err != nil {
+		log.Printf("[ExternalAuth] Failed to upsert user: %v", err)
+		return c.Redirect("/?error=db_error")
+	}
+
+	// Set session cookie
+	c.Cookie(&fiber.Cookie{
+		Name:     "session_id",
+		Value:    strconv.FormatInt(user.ID, 10),
+		Path:     "/",
+		MaxAge:   86400 * 30,
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Lax",
+	})
+
+	return c.Redirect("/")
+}
+
 func (h *Handler) CreateCard(c *fiber.Ctx) error {
 	user, ok := c.Locals("user").(*models.User)
 	if !ok || user == nil {
@@ -139,5 +224,3 @@ func (h *Handler) CreateCard(c *fiber.Ctx) error {
 	c.Set("HX-Redirect", "/c/"+strconv.FormatInt(card.ID, 10))
 	return c.SendStatus(200)
 }
-
-

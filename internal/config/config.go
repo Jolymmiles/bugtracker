@@ -24,26 +24,33 @@ type Config struct {
 	S3AccessKeyID     string
 	S3SecretAccessKey string
 	S3PublicURL       string
+	// External Auth
+	ExternalAuthURL          string
+	ExternalAuthClientID     string
+	ExternalAuthClientSecret string
 }
 
 func Load() *Config {
 	_ = godotenv.Load()
 
 	return &Config{
-		Port:              getEnv("PORT", "8080"),
-		BotToken:          getEnv("BOT_TOKEN", ""),
-		BotUsername:       getEnv("BOT_USERNAME", "YourBotName"),
-		DatabaseURL:       getEnv("DATABASE_URL", "postgres://bugtracker:bugtracker@localhost:5432/bugtracker?sslmode=disable"),
-		SessionKey:        getEnv("SESSION_KEY", "change-me-in-production"),
-		ImgBBApiKey:       getEnv("IMGBB_API_KEY", ""),
-		AdminIDs:          parseAdminIDs(getEnv("ADMIN_IDS", "")),
-		AppURL:            getEnv("APP_URL", ""),
-		S3Bucket:          getEnv("S3_BUCKET", ""),
-		S3Region:          getEnv("S3_REGION", "us-east-1"),
-		S3Endpoint:        getEnv("S3_ENDPOINT", ""),
-		S3AccessKeyID:     getEnv("S3_ACCESS_KEY_ID", ""),
-		S3SecretAccessKey: getEnv("S3_SECRET_ACCESS_KEY", ""),
-		S3PublicURL:       getEnv("S3_PUBLIC_URL", ""),
+		Port:                     getEnv("PORT", "8080"),
+		BotToken:                 getEnv("BOT_TOKEN", ""),
+		BotUsername:              getEnv("BOT_USERNAME", "YourBotName"),
+		DatabaseURL:              getEnv("DATABASE_URL", "postgres://bugtracker:bugtracker@localhost:5432/bugtracker?sslmode=disable"),
+		SessionKey:               getEnv("SESSION_KEY", "change-me-in-production"),
+		ImgBBApiKey:              getEnv("IMGBB_API_KEY", ""),
+		AdminIDs:                 parseAdminIDs(getEnv("ADMIN_IDS", "")),
+		AppURL:                   getEnv("APP_URL", ""),
+		S3Bucket:                 getEnv("S3_BUCKET", ""),
+		S3Region:                 getEnv("S3_REGION", "us-east-1"),
+		S3Endpoint:               getEnv("S3_ENDPOINT", ""),
+		S3AccessKeyID:            getEnv("S3_ACCESS_KEY_ID", ""),
+		S3SecretAccessKey:        getEnv("S3_SECRET_ACCESS_KEY", ""),
+		S3PublicURL:              getEnv("S3_PUBLIC_URL", ""),
+		ExternalAuthURL:          getEnv("EXTERNAL_AUTH_URL", ""),
+		ExternalAuthClientID:     getEnv("EXTERNAL_AUTH_CLIENT_ID", ""),
+		ExternalAuthClientSecret: getEnv("EXTERNAL_AUTH_CLIENT_SECRET", ""),
 	}
 }
 
