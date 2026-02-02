@@ -164,26 +164,29 @@ func (h *Handler) ExternalAuthCallback(c *fiber.Ctx) error {
 	log.Printf("[ExternalAuth] Raw response: %s", string(bodyBytes))
 	resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
-	var userData struct {
-		TelegramID int64  `json:"telegram_id"`
-		Username   string `json:"username"`
-		FirstName  string `json:"first_name"`
-		LastName   string `json:"last_name"`
+	var response struct {
+		Success bool `json:"success"`
+		Data    struct {
+			TelegramID int64  `json:"telegram_id"`
+			Username   string `json:"username"`
+			FirstName  string `json:"first_name"`
+			LastName   string `json:"last_name"`
+		} `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&userData); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		log.Printf("[ExternalAuth] Failed to decode response: %v", err)
 		return c.Redirect("/?error=decode_failed")
 	}
 
 	log.Printf("[ExternalAuth] Received userData: telegram_id=%d, username=%s, first_name=%s",
-		userData.TelegramID, userData.Username, userData.FirstName)
+		response.Data.TelegramID, response.Data.Username, response.Data.FirstName)
 
 	// Create/update user
 	user := &models.User{
-		ID:        userData.TelegramID,
-		FirstName: userData.FirstName,
-		LastName:  userData.LastName,
-		Username:  userData.Username,
+		ID:        response.Data.TelegramID,
+		FirstName: response.Data.FirstName,
+		LastName:  response.Data.LastName,
+		Username:  response.Data.Username,
 		AuthDate:  time.Now(),
 	}
 
