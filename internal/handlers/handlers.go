@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -158,6 +159,11 @@ func (h *Handler) ExternalAuthCallback(c *fiber.Ctx) error {
 		return c.Redirect("/?error=exchange_failed")
 	}
 
+	// Log raw response for debugging
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	log.Printf("[ExternalAuth] Raw response: %s", string(bodyBytes))
+	resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
 	var userData struct {
 		TelegramID int64  `json:"telegram_id"`
 		Username   string `json:"username"`
@@ -168,6 +174,9 @@ func (h *Handler) ExternalAuthCallback(c *fiber.Ctx) error {
 		log.Printf("[ExternalAuth] Failed to decode response: %v", err)
 		return c.Redirect("/?error=decode_failed")
 	}
+
+	log.Printf("[ExternalAuth] Received userData: telegram_id=%d, username=%s, first_name=%s",
+		userData.TelegramID, userData.Username, userData.FirstName)
 
 	// Create/update user
 	user := &models.User{
