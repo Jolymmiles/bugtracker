@@ -100,11 +100,11 @@ export function CardRow({ card }: CardRowProps) {
                 {timeAgo(card.created_at)}
               </Text>
               <Badge
-                color={card.type === 'issue' ? 'red' : 'blue'}
+                color={card.type === 'issue' ? 'red' : card.type === 'suggestion' ? 'blue' : 'grape'}
                 variant="light"
                 size="xs"
               >
-                {card.type === 'issue' ? 'Issue' : 'Suggestion'}
+                {card.type === 'issue' ? 'Issue' : card.type === 'suggestion' ? 'Suggestion' : 'Design'}
               </Badge>
             </Group>
             <Group gap="sm">

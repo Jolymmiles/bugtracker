@@ -150,6 +150,7 @@ export function NewCardModal() {
             data={[
               { value: 'issue', label: 'Issue (Bug Report)' },
               { value: 'suggestion', label: 'Suggestion' },
+              { value: 'design', label: 'Design' },
             ]}
             required
           />

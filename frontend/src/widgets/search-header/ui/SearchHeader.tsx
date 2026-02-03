@@ -54,6 +54,7 @@ export function SearchHeader() {
                 { label: 'All', value: '' },
                 { label: 'Issues', value: 'issue' },
                 { label: 'Suggestions', value: 'suggestion' },
+                { label: 'Design', value: 'design' },
               ]}
             />
 

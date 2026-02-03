@@ -12,7 +12,7 @@ export interface Card {
   user_id: number;
   title: string;
   description: string;
-  type: 'issue' | 'suggestion';
+  type: 'issue' | 'suggestion' | 'design';
   status: 'open' | 'closed' | 'fixed' | 'fix_coming';
   images?: string[];
   rating: number;
@@ -56,7 +56,7 @@ export interface TelegramAuthData {
 }
 
 export type SortType = 'rate' | 'time';
-export type CardType = 'issue' | 'suggestion' | '';
+export type CardType = 'issue' | 'suggestion' | 'design' | '';
 export type StatusType = 'open' | 'fix_coming' | 'fixed' | 'closed';
 
 export interface Attachment {

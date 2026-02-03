@@ -17,7 +17,7 @@ type Card struct {
 	UserID      int64     `json:"user_id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
-	Type        string    `json:"type"`   // issue, suggestion
+	Type        string    `json:"type"`   // issue, suggestion, design
 	Status      string    `json:"status"` // open, closed, fixed, fix_coming
 	Images      []string  `json:"images,omitempty"`
 	Rating      int       `json:"rating"`
