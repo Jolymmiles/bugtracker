@@ -7,6 +7,7 @@ export function useCards(params: {
   type?: CardType;
   status?: StatusType;
   query?: string;
+  mine?: boolean;
 }) {
   return useInfiniteQuery({
     queryKey: ['cards', params],

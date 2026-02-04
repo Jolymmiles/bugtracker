@@ -56,6 +56,7 @@ export const api = {
     page?: number;
     limit?: number;
     query?: string;
+    mine?: boolean;
   }): Promise<CardsResponse> {
     const searchParams = new URLSearchParams();
     if (params.sort) searchParams.set('sort', params.sort);
@@ -64,6 +65,7 @@ export const api = {
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.query) searchParams.set('query', params.query);
+    if (params.mine) searchParams.set('mine', '1');
 
     return request(`/cards?${searchParams.toString()}`);
   },

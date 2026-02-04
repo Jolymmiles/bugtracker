@@ -148,7 +148,7 @@ func itoa(i int) string {
 	return strconv.Itoa(i)
 }
 
-func (r *Repository) ListCardsWithSearch(sort, cardType, status, query string, limit, offset int, userID int64) ([]*models.Card, int, error) {
+func (r *Repository) ListCardsWithSearch(sort, cardType, status, query string, limit, offset int, viewerID int64, authorID *int64) ([]*models.Card, int, error) {
 	baseQuery := `
 		SELECT c.id, c.user_id, c.title, COALESCE(c.description, ''), c.type, c.status, COALESCE(c.images, '{}'), c.rating, c.created_at,
 		       u.id, u.first_name, COALESCE(u.last_name, ''), COALESCE(u.username, ''), COALESCE(u.photo_url, ''),
@@ -161,10 +161,17 @@ func (r *Repository) ListCardsWithSearch(sort, cardType, status, query string, l
 		WHERE 1=1
 	`
 	countQuery := `SELECT COUNT(*) FROM cards WHERE 1=1`
-	args := []interface{}{userID}
+	args := []interface{}{viewerID}
 	countArgs := []interface{}{}
 	argNum := 2
 
+	if authorID != nil {
+		baseQuery += " AND c.user_id = $" + itoa(argNum)
+		countQuery += " AND user_id = $" + itoa(len(countArgs)+1)
+		args = append(args, *authorID)
+		countArgs = append(countArgs, *authorID)
+		argNum++
+	}
 	if query != "" {
 		baseQuery += " AND (c.title ILIKE '%' || $" + itoa(argNum) + " || '%' OR c.description ILIKE '%' || $" + itoa(argNum) + " || '%')"
 		countQuery += " AND (title ILIKE '%' || $" + itoa(len(countArgs)+1) + " || '%' OR description ILIKE '%' || $" + itoa(len(countArgs)+1) + " || '%')"

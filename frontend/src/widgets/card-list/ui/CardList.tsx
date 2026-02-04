@@ -2,10 +2,32 @@ import { useEffect, useRef, useMemo } from 'react';
 import { Stack, Group, Text, SegmentedControl, Center, Loader } from '@mantine/core';
 import { useCards, CardRow } from '@/entities/card';
 import { useCardFilters } from '@/features/card';
-import type { SortType } from '@/shared/types';
+import type { CardType, SortType, StatusType } from '@/shared/types';
 
-export function CardList() {
-  const { sort, type, status, query, setSort } = useCardFilters();
+type CardListProps = {
+  title?: string;
+  params?: {
+    sort?: SortType;
+    type?: CardType;
+    status?: StatusType;
+    query?: string;
+    mine?: boolean;
+  };
+  showSort?: boolean;
+  showTotal?: boolean;
+  totalLabel?: string;
+  emptyText?: string;
+};
+
+export function CardList({
+  title,
+  params,
+  showSort = params ? false : true,
+  showTotal = true,
+  totalLabel = 'Cards',
+  emptyText = 'No cards found',
+}: CardListProps) {
+  const { sort: filterSort, type, status, query, mine, setSort } = useCardFilters();
   const observerRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -15,7 +37,13 @@ export function CardList() {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useCards({ sort, type, status, query });
+  } = useCards({
+    sort: params?.sort ?? filterSort,
+    type: params?.type ?? type,
+    status: params?.status ?? status,
+    query: params?.query ?? query,
+    mine: params?.mine ?? mine,
+  });
 
   const cards = useMemo(
     () => data?.pages.flatMap((page) => page.cards ?? []) ?? [],
@@ -38,6 +66,7 @@ export function CardList() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleSortChange = (value: string) => {
+    if (params?.sort !== undefined) return;
     setSort(value as SortType);
   };
 
@@ -59,20 +88,29 @@ export function CardList() {
 
   return (
     <Stack gap="md">
-      <Group justify="space-between">
-        <Text size="sm" c="dimmed">
-          {total} Cards
-        </Text>
-        <SegmentedControl
-          size="xs"
-          value={sort}
-          onChange={handleSortChange}
-          data={[
-            { label: 'by rating', value: 'rate' },
-            { label: 'by time', value: 'time' },
-          ]}
-        />
-      </Group>
+      {(title || showTotal || showSort) && (
+        <Group justify="space-between">
+          <Group gap="xs">
+            {title && <Text fw={600}>{title}</Text>}
+            {showTotal && (
+              <Text size="sm" c="dimmed">
+                {total} {totalLabel}
+              </Text>
+            )}
+          </Group>
+          {showSort && (
+            <SegmentedControl
+              size="xs"
+              value={params?.sort ?? filterSort}
+              onChange={handleSortChange}
+              data={[
+                { label: 'by rating', value: 'rate' },
+                { label: 'by time', value: 'time' },
+              ]}
+            />
+          )}
+        </Group>
+      )}
 
       <Stack gap="sm">
         {cards.map((card) => (
@@ -82,7 +120,7 @@ export function CardList() {
 
       {cards.length === 0 && (
         <Center py="xl">
-          <Text c="dimmed">No cards found</Text>
+          <Text c="dimmed">{emptyText}</Text>
         </Center>
       )}
 

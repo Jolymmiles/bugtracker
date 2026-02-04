@@ -50,6 +50,8 @@ func (h *Handler) GetCards(c *fiber.Ctx) error {
 	cardType := c.Query("type")
 	status := c.Query("status")
 	query := c.Query("query")
+	mineParam := strings.ToLower(c.Query("mine"))
+	mine := mineParam == "1" || mineParam == "true" || mineParam == "yes"
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	if page < 1 {
 		page = 1
@@ -60,12 +62,19 @@ func (h *Handler) GetCards(c *fiber.Ctx) error {
 	}
 	offset := (page - 1) * limit
 
-	var userID int64
+	var viewerID int64
+	var authorID *int64
 	if user, ok := c.Locals("user").(*models.User); ok && user != nil {
-		userID = user.ID
+		viewerID = user.ID
+		if mine {
+			authorIDValue := user.ID
+			authorID = &authorIDValue
+		}
+	} else if mine {
+		return c.Status(401).JSON(fiber.Map{"error": "Login required"})
 	}
 
-	cards, total, err := h.repo.ListCardsWithSearch(sort, cardType, status, query, limit, offset, userID)
+	cards, total, err := h.repo.ListCardsWithSearch(sort, cardType, status, query, limit, offset, viewerID, authorID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Error loading cards"})
 	}
